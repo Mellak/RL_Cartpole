@@ -7,8 +7,11 @@ import gym
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+from time import sleep
+
 
 env = gym.make('CartPole-v1')
+env = gym.wrappers.Monitor(env, "record_dir", force='True')
 observation_space = env.observation_space.shape[0]
 action_space = env.action_space.n
 
@@ -148,10 +151,12 @@ for i in range(1, EPISODES):
         state = state_
         score += reward
 
+        sleep(0.01)
+        env.render()
         if done:
             if score > best_reward:
                 best_reward = score
-            average_reward += score 
+            average_reward += score
             print("Episode {} Average Reward {} Best Reward {} Last Reward {} Epsilon {}".format(i, average_reward/i, best_reward, score, agent.returning_epsilon()))
             break
             
