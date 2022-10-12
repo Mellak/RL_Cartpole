@@ -1,28 +1,40 @@
-import sys
-import os
-sys.path.append('/home/youness/Softwares/Anaconda/anaconda3/lib/python3.8/site-packages/gym')
-import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+import torchvision.transforms as T
 import gym
 
 
-def cartpole():
-    env = gym.make("CartPole-v2")
-    observation_space = env.observation_space.shape[0]
-    action_space = env.action_space.n
-    dqn_solver = DQNSolver(observation_space, action_space)
 
-    while True:
-        state = env.reset()
-        state = np.reshape(state, [1, observation_space])
-        while True:
-            env.render()
-            action = dqn_solver.act(state)
-            state_next, reward, terminal, info = env.step(action)
-            reward = reward if not terminal else -reward
-            state_next = np.reshape(state_next, [1, observation_space])
-            dqn_solver.remember
-            dqn_solver.remember(state, action, reward, state_next, terminal)
-            dqn_solver.experience_replay()
-            state = state_next
-            if terminal:
-                break
+
+
+env = gym.make('CartPole-v1')
+observation_space = env.observation_space.shape[0]
+action_space = env.action_space.n
+
+FC1_DIMS = 1024
+FC2_DIMS = 512
+LEARNING_RATE = 0.0001
+DEVICE = torch.device("cpu")
+
+class Network(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.input_shape = env.observation_space.shape
+        self.action_space = action_space
+
+        self.fc1 = nn.Linear(*self.input_shape, FC1_DIMS)
+        self.fc2 = nn.Linear(FC1_DIMS, FC2_DIMS)
+        self.fc3 = nn.Linear(FC2_DIMS, self.action_space)
+
+        self.optimizer = optim.Adam(self.parameters(), lr=LEARNING_RATE)
+        self.loss = nn.MSELoss()
+        self.to(DEVICE)
+    
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+
+        return x  # returns the best action for us to take
